@@ -1,0 +1,93 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* --- Base Layout --- */
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #000; /* Ensuring the background is pitch black */
+  overflow-x: hidden; /* Prevents horizontal scrolling from drifting bubbles */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* --- Floating Background Bubbles --- */
+.bubble {
+  position: absolute;
+  border-radius: 50%;
+  bottom: -100px; /* Spawns them off-screen at the bottom */
+  pointer-events: none; /* Crucial: allows clicking buttons THROUGH the bubbles */
+  animation: bubbleUp linear infinite;
+  z-index: 0;
+}
+
+@keyframes bubbleUp {
+  0% {
+    transform: translateY(0) scale(0.5);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1; /* Bubbles become visible quickly after spawning */
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    /* Moves the bubble 120% of the screen height upward */
+    transform: translateY(-120vh) scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* --- UI Entrance Animations --- */
+@keyframes slideDown {
+  from { 
+    transform: translateY(-50px); 
+    opacity: 0; 
+  }
+  to { 
+    transform: translateY(0); 
+    opacity: 1; 
+  }
+}
+
+@keyframes fadeUp {
+  from { 
+    transform: translateY(40px); 
+    opacity: 0; 
+  }
+  to { 
+    transform: translateY(0); 
+    opacity: 1; 
+  }
+}
+
+@keyframes pulse-slow {
+  0%, 100% { 
+    opacity: 0.3; 
+    transform: scale(1); 
+  }
+  50% { 
+    opacity: 0.6; 
+    transform: scale(1.1); 
+  }
+}
+
+/* --- Utility Classes --- */
+/* Add these to your JSX elements to trigger the animations */
+.animate-slideDown { 
+  animation: slideDown 0.8s ease-out forwards; 
+}
+
+.animate-fadeUp { 
+  animation: fadeUp 1s ease-out forwards; 
+}
+
+.animate-pulse-slow { 
+  animation: pulse-slow 8s ease-in-out infinite; 
+}
+
+/* Optional Glassmorphism Border Glow */
+.glass-border {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
