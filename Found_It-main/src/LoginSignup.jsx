@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 function LoginSignup() {
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
-  const [isForgotMode, setIsForgotMode] = useState(false); // Forgot password ke liye
+  const [isForgotMode, setIsForgotMode] = useState(false);
   const [collegeId, setCollegeId] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -12,16 +12,12 @@ function LoginSignup() {
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // --- 1. Validation Logic ---
   const validateInputs = () => {
-    // Username: At least one alphabet
     const hasAlphabet = /[a-zA-Z]/.test(collegeId);
     if (!hasAlphabet) {
       alert("College ID must contain at least one letter!");
       return false;
     }
-
-    // Password: Letters + Numbers (Only for Signup or Reset)
     if (!isLogin || isForgotMode) {
       const hasNum = /\d/.test(password);
       const hasLetter = /[a-zA-Z]/.test(password);
@@ -33,9 +29,9 @@ function LoginSignup() {
     return true;
   };
 
-  // --- 2. Handle Forgot Password (Initial OTP Send) ---
+  // --- Handle Forgot Password (Initial OTP Send) ---
   const handleForgotRequest = async () => {
-    if (!email) return alert("Please enter your email first!");
+    if (!email || !collegeId) return alert("Please enter College ID and Email!");
     setLoading(true);
     try {
       const res = await fetch(`http://localhost:8080/api/send-otp`, {
@@ -46,7 +42,6 @@ function LoginSignup() {
       if (res.ok) {
         alert("Reset OTP sent to your email!");
         setIsOtpSent(true);
-        setIsForgotMode(true);
       } else {
         alert("Failed to send reset OTP.");
       }
@@ -57,14 +52,12 @@ function LoginSignup() {
     }
   };
 
-  // --- 3. OTP Verify & Password Reset/Signup ---
+  // --- OTP Verify & Password Reset ---
   const handleVerifyAndAction = async (e) => {
     e.preventDefault();
-    if (!validateInputs()) return;
     setLoading(true);
 
     try {
-      // Step A: Verify OTP first
       const verifyRes = await fetch(`http://localhost:8080/api/verify-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -73,7 +66,6 @@ function LoginSignup() {
 
       if (verifyRes.ok) {
         if (isForgotMode) {
-          // Step B: If in Forgot Mode, Reset Password
           const resetRes = await fetch(`http://localhost:8080/api/reset-password`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -84,9 +76,9 @@ function LoginSignup() {
             setIsForgotMode(false);
             setIsOtpSent(false);
             setIsLogin(true);
+            setPassword(""); // Clear password field
           }
         } else {
-          // Step C: If in Signup Mode, Registration is already done in handleAuth
           alert("Email Verified! You can now login.");
           setIsOtpSent(false);
           setIsLogin(true);
@@ -101,9 +93,16 @@ function LoginSignup() {
     }
   };
 
-  // --- 4. Main Login/Signup Logic ---
+  // --- Main Auth Logic ---
   const handleAuth = async (e) => {
     e.preventDefault();
+
+    // FIXED: Agar forgot mode hai toh auth nahi, forgot request chalao
+    if (isForgotMode) {
+      handleForgotRequest();
+      return;
+    }
+
     if (!validateInputs()) return;
     setLoading(true);
 
@@ -127,7 +126,7 @@ function LoginSignup() {
         const signupRes = await fetch(`http://localhost:8080/signup`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ collegeId, password }),
+          body: JSON.stringify({ collegeId, password, email }),
         });
 
         if (signupRes.ok) {
@@ -153,22 +152,19 @@ function LoginSignup() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4">
-      <h1 className="text-7xl md:text-8xl font-black mb-12 tracking-tighter 
-                     bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-600 
-                     bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(34,197,253,0.3)]">
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-black">
+      <h1 className="text-7xl md:text-8xl font-black mb-12 tracking-tighter bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-600 bg-clip-text text-transparent">
         FOUND-IT
       </h1>
 
       <div className="bg-gray-900/60 backdrop-blur-xl p-8 rounded-3xl w-full max-w-md shadow-2xl border border-white/10">
-        <h2 className="text-2xl font-bold bg-gradient-to-br from-white to-cyan-400 bg-clip-text text-transparent mb-6">
+        <h2 className="text-2xl font-bold text-white mb-6">
           {isOtpSent ? "Verify OTP" : isForgotMode ? "Reset Password" : isLogin ? "Login" : "Sign Up"}
         </h2>
 
         {isOtpSent ? (
           <form className="flex flex-col gap-4" onSubmit={handleVerifyAndAction}>
             <p className="text-gray-400 text-sm">Enter OTP sent to {email}</p>
-            {isForgotMode && <p className="text-cyan-400 text-xs">This will set your new password.</p>}
             <input
               type="text"
               placeholder="6-digit OTP"
@@ -178,14 +174,14 @@ function LoginSignup() {
               required
             />
             <button className="bg-cyan-500 text-white py-3 rounded-xl font-bold">
-              {loading ? "Processing..." : isForgotMode ? "Reset & Login" : "Verify OTP"}
+              {loading ? "Processing..." : "Verify & Complete"}
             </button>
           </form>
         ) : (
           <form className="flex flex-col gap-4" onSubmit={handleAuth}>
             <input
               type="text"
-              placeholder="College ID (e.g. ABC123)"
+              placeholder="College ID"
               value={collegeId}
               onChange={(e) => setCollegeId(e.target.value)}
               className="w-full px-4 py-3 rounded-xl bg-black/50 border border-white/10 text-white"
@@ -203,7 +199,7 @@ function LoginSignup() {
             )}
             <input
               type="password"
-              placeholder={isForgotMode ? "New Password (Alpha+Num)" : "Password"}
+              placeholder={isForgotMode ? "New Password" : "Password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-3 rounded-xl bg-black/50 border border-white/10 text-white"
@@ -216,12 +212,12 @@ function LoginSignup() {
               </p>
             )}
 
-            <button className="bg-white text-black py-3 rounded-xl font-bold mt-2">
-              {loading ? "..." : isForgotMode ? "Send Reset OTP" : isLogin ? "Sign In" : "Register & Get OTP"}
+            <button type="submit" className="bg-white text-black py-3 rounded-xl font-bold mt-2">
+              {loading ? "..." : isForgotMode ? "Send Reset OTP" : isLogin ? "Sign In" : "Register"}
             </button>
             
             {isForgotMode && (
-              <button type="button" className="text-xs text-gray-400" onClick={() => setIsForgotMode(false)}>
+              <button type="button" className="text-xs text-gray-400 mt-2" onClick={() => setIsForgotMode(false)}>
                 Back to Login
               </button>
             )}
