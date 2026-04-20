@@ -174,4 +174,4 @@ app.get("/items/:type", async (req, res) => {
     } catch (err) { res.status(500).json({ message: "Error" }); }
 });
 
-app.listen(PORT, () => console.log(`🚀 Server on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server on http://localhost:${PORT}`));                   
